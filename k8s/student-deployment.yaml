@@ -2,41 +2,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: student-deployment
-  labels:
-    app: student
-
 spec:
   replicas: 2
-
   selector:
     matchLabels:
       app: student
-
   template:
     metadata:
       labels:
         app: student
-
     spec:
       containers:
         - name: student
           image: student-service:latest
           imagePullPolicy: IfNotPresent
-
           ports:
             - containerPort: 8082
-
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: k8s
-
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "250m"
-            limits:
-              memory: "1Gi"
-              cpu: "500m"
 
           readinessProbe:
             httpGet:
@@ -44,8 +28,6 @@ spec:
               port: 8082
             initialDelaySeconds: 40
             periodSeconds: 10
-            timeoutSeconds: 3
-            failureThreshold: 5
 
           livenessProbe:
             httpGet:
@@ -53,5 +35,3 @@ spec:
               port: 8082
             initialDelaySeconds: 80
             periodSeconds: 20
-            timeoutSeconds: 3
-            failureThreshold: 5
