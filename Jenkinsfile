@@ -49,14 +49,26 @@ pipeline {
                 '''
             }
         }
+
+        /* ================= KUBERNETES DEPLOYMENT ================= */
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                bat '''
+                kubectl apply -f k8s/
+                kubectl rollout status deployment/auth-deployment
+                kubectl rollout status deployment/student-deployment
+                '''
+            }
+        }
     }
 
     post {
         success {
-            echo '✅ Maven + Docker build completed successfully!'
+            echo '✅ Maven + Docker + Kubernetes deployment completed successfully!'
         }
         failure {
-            echo '❌ Build failed. Check logs.'
+            echo '❌ Pipeline failed. Check logs.'
         }
     }
 }
