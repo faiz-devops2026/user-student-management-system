@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
         - name: student
-          image: student-service:1.0
-          imagePullPolicy: Always
+          image: student-service:latest
+          imagePullPolicy: IfNotPresent
 
           ports:
             - containerPort: 8082
@@ -34,22 +34,16 @@ spec:
               memory: "1Gi"
               cpu: "500m"
 
-          # ✅ READINESS: traffic only when DB + app is ready
           readinessProbe:
             httpGet:
-              path: /actuator/health/readiness
+              path: /actuator/health
               port: 8082
             initialDelaySeconds: 60
             periodSeconds: 10
-            failureThreshold: 5
-            timeoutSeconds: 3
 
-          # ✅ LIVENESS: restart only if app is truly dead
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: /actuator/health
               port: 8082
             initialDelaySeconds: 120
             periodSeconds: 20
-            failureThreshold: 5
-            timeoutSeconds: 3

@@ -2,10 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AUTH_IMAGE    = "auth-service:${BUILD_NUMBER}"
-        STUDENT_IMAGE = "student-service:${BUILD_NUMBER}"
-        GATEWAY_IMAGE = "api-gateway:${BUILD_NUMBER}"
-        KUBECONFIG    = "C:/Users/faizt/.kube/config"
+        KUBECONFIG = "C:/Users/faizt/.kube/config"
     }
 
     stages {
@@ -41,22 +38,12 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Build Docker Images (Local)') {
             steps {
                 bat """
-                docker build -t %AUTH_IMAGE% auth-module
-                docker build -t %STUDENT_IMAGE% student-module
-                docker build -t %GATEWAY_IMAGE% api-gateway
-                """
-            }
-        }
-
-        stage('Update Kubernetes Manifests') {
-            steps {
-                bat """
-                powershell -Command "(Get-Content k8s/auth-deployment.yaml) -replace 'auth-service:.*', 'auth-service:${BUILD_NUMBER}' | Set-Content k8s/auth-deployment.yaml"
-                powershell -Command "(Get-Content k8s/student-deployment.yaml) -replace 'student-service:.*', 'student-service:${BUILD_NUMBER}' | Set-Content k8s/student-deployment.yaml"
-                powershell -Command "(Get-Content k8s/api-gateway-deployment.yaml) -replace 'api-gateway:.*', 'api-gateway:${BUILD_NUMBER}' | Set-Content k8s/api-gateway-deployment.yaml"
+                docker build -t auth-service:latest auth-module
+                docker build -t student-service:latest student-module
+                docker build -t api-gateway:latest api-gateway
                 """
             }
         }
@@ -65,6 +52,11 @@ pipeline {
             steps {
                 bat """
                 kubectl apply -f k8s/
+
+                kubectl rollout restart deployment/auth-deployment
+                kubectl rollout restart deployment/student-deployment
+                kubectl rollout restart deployment/gateway-deployment
+
                 kubectl rollout status deployment/auth-deployment
                 kubectl rollout status deployment/student-deployment
                 kubectl rollout status deployment/gateway-deployment
