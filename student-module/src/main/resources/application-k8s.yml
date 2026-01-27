@@ -8,11 +8,6 @@ spring:
     password: app_pass
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-
 management:
   endpoints:
     web:

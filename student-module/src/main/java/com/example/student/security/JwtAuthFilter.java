@@ -33,7 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // 🔴 ABSOLUTE BYPASS FOR K8s PROBES
+        // ✅ ABSOLUTE BYPASS
         if (path.startsWith("/actuator/")) {
             filterChain.doFilter(request, response);
             return;
@@ -45,27 +45,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String token = header.substring(7);
 
             Claims claims = Jwts.parser()
-                    .verifyWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+                .verifyWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
 
             String username = claims.getSubject();
             String role = claims.get("role", String.class);
 
             UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            username,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                    );
+                new UsernamePasswordAuthenticationToken(
+                    username,
+                    null,
+                    List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                );
 
             auth.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request));
+                new WebAuthenticationDetailsSource()
+                    .buildDetails(request)
+            );
 
-            SecurityContextHolder.getContext()
-                    .setAuthentication(auth);
+            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
         filterChain.doFilter(request, response);
