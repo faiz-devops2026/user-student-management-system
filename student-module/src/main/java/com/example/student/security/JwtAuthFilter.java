@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final String SECRET =
-            "MyJwtSecretKeyForCompleteProject2026Secure";
+        "MyJwtSecretKeyForCompleteProject2026Secure";
 
     @Override
     protected void doFilterInternal(
@@ -33,8 +33,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // ✅ VERY IMPORTANT: allow actuator probes
-        if (path.startsWith("/actuator")) {
+        // 🔴 ABSOLUTE BYPASS FOR K8s PROBES
+        if (path.startsWith("/actuator/")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -42,7 +42,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
-
             String token = header.substring(7);
 
             Claims claims = Jwts.parser()
