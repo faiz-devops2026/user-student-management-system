@@ -50,9 +50,10 @@ pipeline {
             }
         }
 
-        /* ================= KUBERNETES DEPLOYMENT ================= */
-
         stage('Deploy to Kubernetes') {
+            environment {
+                KUBECONFIG = "C:/Users/faizt/.kube/config"
+            }
             steps {
                 bat '''
                 kubectl apply -f k8s/
