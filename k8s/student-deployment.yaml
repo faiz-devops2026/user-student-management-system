@@ -25,7 +25,7 @@ spec:
       containers:
         - name: student
           image: student-service:latest
-          imagePullPolicy: Always   # 🔥 FIX
+          imagePullPolicy: IfNotPresent   # 🔥 FIX
 
           ports:
             - containerPort: 8082
@@ -42,6 +42,7 @@ spec:
               cpu: "500m"
               memory: "1Gi"
 
+          # ✅ READINESS probe (strict – traffic control)
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -51,9 +52,10 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 5
 
+          # ✅ LIVENESS probe (simple – no restart loop)
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: /actuator/health     # 🔥 CHANGED HERE
               port: 8082
             initialDelaySeconds: 120
             periodSeconds: 20
