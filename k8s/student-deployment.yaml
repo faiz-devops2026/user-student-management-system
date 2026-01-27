@@ -25,10 +25,11 @@ spec:
       containers:
         - name: student
           image: student-service:latest
-          imagePullPolicy: IfNotPresent   # 🔥 FIX
+          imagePullPolicy: IfNotPresent
 
           ports:
-            - containerPort: 8082
+            - containerPort: 8082          # App APIs
+            - containerPort: 8083          # 🔥 Actuator (management port)
 
           env:
             - name: SPRING_PROFILES_ACTIVE
@@ -42,21 +43,21 @@ spec:
               cpu: "500m"
               memory: "1Gi"
 
-          # ✅ READINESS probe (strict – traffic control)
+          # ✅ READINESS probe → ACTUATOR PORT (NO SECURITY)
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
-              port: 8082
+              port: 8083                  # 🔥 CHANGED
             initialDelaySeconds: 60
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 5
 
-          # ✅ LIVENESS probe (simple – no restart loop)
+          # ✅ LIVENESS probe → ACTUATOR PORT (NO SECURITY)
           livenessProbe:
             httpGet:
-              path: /actuator/health     # 🔥 CHANGED HERE
-              port: 8082
+              path: /actuator/health/liveness
+              port: 8083                  # 🔥 CHANGED
             initialDelaySeconds: 120
             periodSeconds: 20
             timeoutSeconds: 3

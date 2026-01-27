@@ -9,6 +9,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 management:
+  server:
+    port: 8083          # 🔥 ACTUATOR PORT (SEPARATE)
   endpoints:
     web:
       exposure:
