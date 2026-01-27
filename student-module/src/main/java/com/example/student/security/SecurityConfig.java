@@ -27,7 +27,7 @@ public class SecurityConfig {
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().authenticated()  // 🔐 App secured
+                .anyRequest().authenticated()   // 🔐 APIs secured
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

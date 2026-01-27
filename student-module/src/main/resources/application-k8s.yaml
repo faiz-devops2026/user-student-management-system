@@ -10,7 +10,7 @@ spring:
 
 management:
   server:
-    port: 8083          # 🔥 ACTUATOR PORT (SEPARATE)
+    port: 8083
   endpoints:
     web:
       exposure:

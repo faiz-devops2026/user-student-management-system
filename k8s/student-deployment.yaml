@@ -28,12 +28,22 @@ spec:
           imagePullPolicy: IfNotPresent
 
           ports:
-            - containerPort: 8082          # App APIs
-            - containerPort: 8083          # 🔥 Actuator (management port)
+            - containerPort: 8082        # Application APIs
+            - containerPort: 8083        # Actuator (management)
 
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: k8s
+
+            # 🔥 FORCE ACTUATOR CONFIG (NO YAML DEPENDENCY)
+            - name: MANAGEMENT_SERVER_PORT
+              value: "8083"
+
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "health"
+
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              value: "true"
 
           resources:
             requests:
@@ -43,21 +53,21 @@ spec:
               cpu: "500m"
               memory: "1Gi"
 
-          # ✅ READINESS probe → ACTUATOR PORT (NO SECURITY)
+          # ✅ READINESS PROBE (ACTUATOR – NO SECURITY)
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
-              port: 8083                  # 🔥 CHANGED
+              port: 8083
             initialDelaySeconds: 60
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 5
 
-          # ✅ LIVENESS probe → ACTUATOR PORT (NO SECURITY)
+          # ✅ LIVENESS PROBE (ACTUATOR – NO SECURITY)
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
-              port: 8083                  # 🔥 CHANGED
+              port: 8083
             initialDelaySeconds: 120
             periodSeconds: 20
             timeoutSeconds: 3
