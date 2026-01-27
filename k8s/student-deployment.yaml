@@ -2,21 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: student-deployment
-  labels:
-    app: student
 spec:
   replicas: 2
-
   selector:
     matchLabels:
       app: student
-
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-
   template:
     metadata:
       labels:
@@ -28,47 +18,16 @@ spec:
           imagePullPolicy: IfNotPresent
 
           ports:
-            - containerPort: 8082        # Application APIs
-            - containerPort: 8083        # Actuator (management)
+            - containerPort: 8082
 
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: k8s
 
-            # 🔥 FORCE ACTUATOR CONFIG (NO YAML DEPENDENCY)
-            - name: MANAGEMENT_SERVER_PORT
-              value: "8083"
-
-            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
-              value: "health"
-
-            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
-              value: "true"
-
-          resources:
-            requests:
-              cpu: "250m"
-              memory: "512Mi"
-            limits:
-              cpu: "500m"
-              memory: "1Gi"
-
-          # ✅ READINESS PROBE (ACTUATOR – NO SECURITY)
-          readinessProbe:
-            httpGet:
-              path: /actuator/health/readiness
-              port: 8083
-            initialDelaySeconds: 60
-            periodSeconds: 10
-            timeoutSeconds: 3
-            failureThreshold: 5
-
-          # ✅ LIVENESS PROBE (ACTUATOR – NO SECURITY)
+          # ✅ ONLY LIVENESS (ENOUGH)
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
-              port: 8083
+              path: /actuator/health
+              port: 8082
             initialDelaySeconds: 120
             periodSeconds: 20
-            timeoutSeconds: 3
-            failureThreshold: 5
