@@ -33,7 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // ✅ VERY IMPORTANT: allow Kubernetes health checks
+        // ✅ Allow Kubernetes health checks without JWT
         if (path.startsWith("/actuator")) {
             filterChain.doFilter(request, response);
             return;
@@ -42,31 +42,36 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
+            try {
+                String token = header.substring(7);
 
-            String token = header.substring(7);
+                Claims claims = Jwts.parser()
+                        .verifyWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload();
 
-            Claims claims = Jwts.parser()
-                    .verifyWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+                String username = claims.getSubject();
+                String role = claims.get("role", String.class);
 
-            String username = claims.getSubject();
-            String role = claims.get("role", String.class);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                username,
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                        );
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            username,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                    );
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request));
 
-            auth.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request));
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
 
-            SecurityContextHolder.getContext()
-                    .setAuthentication(auth);
+            } catch (Exception e) {
+                // ❌ Invalid token → clear context (request will be rejected)
+                SecurityContextHolder.clearContext();
+            }
         }
 
         filterChain.doFilter(request, response);
