@@ -25,7 +25,7 @@ spec:
       containers:
         - name: student
           image: student-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always   # 🔥 FIX
 
           ports:
             - containerPort: 8082
@@ -42,7 +42,6 @@ spec:
               cpu: "500m"
               memory: "1Gi"
 
-          # ✅ Kubernetes READINESS probe
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -52,7 +51,6 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 5
 
-          # ✅ Kubernetes LIVENESS probe
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness

@@ -57,9 +57,7 @@ pipeline {
                 kubectl rollout restart deployment/student-deployment
                 kubectl rollout restart deployment/gateway-deployment
 
-                kubectl rollout status deployment/auth-deployment
                 kubectl rollout status deployment/student-deployment
-                kubectl rollout status deployment/gateway-deployment
                 """
             }
         }

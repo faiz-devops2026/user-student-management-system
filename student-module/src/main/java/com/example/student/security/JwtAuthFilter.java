@@ -33,7 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // ✅ ABSOLUTE BYPASS
+        // ✅ BYPASS K8s + Actuator
         if (path.startsWith("/actuator/")) {
             filterChain.doFilter(request, response);
             return;
@@ -42,30 +42,36 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+            try {
+                String token = header.substring(7);
 
-            Claims claims = Jwts.parser()
-                .verifyWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                Claims claims = Jwts.parser()
+                    .verifyWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
 
-            String username = claims.getSubject();
-            String role = claims.get("role", String.class);
+                String username = claims.getSubject();
+                String role = claims.get("role", String.class);
 
-            UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(
-                    username,
-                    null,
-                    List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
+
+                auth.setDetails(
+                    new WebAuthenticationDetailsSource()
+                        .buildDetails(request)
                 );
 
-            auth.setDetails(
-                new WebAuthenticationDetailsSource()
-                    .buildDetails(request)
-            );
+                SecurityContextHolder.getContext().setAuthentication(auth);
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            } catch (Exception e) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);
