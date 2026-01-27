@@ -33,7 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // ✅ Allow Kubernetes health checks without JWT
+        // ✅ EXACTLY LIKE AUTH-MODULE
         if (path.startsWith("/actuator")) {
             filterChain.doFilter(request, response);
             return;
@@ -42,36 +42,31 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
-            try {
-                String token = header.substring(7);
 
-                Claims claims = Jwts.parser()
-                        .verifyWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
-                        .build()
-                        .parseSignedClaims(token)
-                        .getPayload();
+            String token = header.substring(7);
 
-                String username = claims.getSubject();
-                String role = claims.get("role", String.class);
+            Claims claims = Jwts.parser()
+                    .verifyWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                username,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+            String username = claims.getSubject();
+            String role = claims.get("role", String.class);
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request));
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
+            auth.setDetails(
+                    new WebAuthenticationDetailsSource()
+                            .buildDetails(request));
 
-            } catch (Exception e) {
-                // ❌ Invalid token → clear context (request will be rejected)
-                SecurityContextHolder.clearContext();
-            }
+            SecurityContextHolder.getContext()
+                    .setAuthentication(auth);
         }
 
         filterChain.doFilter(request, response);
