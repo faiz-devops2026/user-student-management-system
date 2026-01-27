@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     environment {
-        AUTH_IMAGE = "auth-service:1.0"
-        STUDENT_IMAGE = "student-service:1.0"
-        GATEWAY_IMAGE = "api-gateway:1.0"
+        AUTH_IMAGE    = "auth-service:${BUILD_NUMBER}"
+        STUDENT_IMAGE = "student-service:${BUILD_NUMBER}"
+        GATEWAY_IMAGE = "api-gateway:${BUILD_NUMBER}"
+        KUBECONFIG    = "C:/Users/faizt/.kube/config"
     }
 
     stages {
@@ -42,34 +43,42 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                bat '''
+                bat """
                 docker build -t %AUTH_IMAGE% auth-module
                 docker build -t %STUDENT_IMAGE% student-module
                 docker build -t %GATEWAY_IMAGE% api-gateway
-                '''
+                """
+            }
+        }
+
+        stage('Update Kubernetes Manifests') {
+            steps {
+                bat """
+                powershell -Command "(Get-Content k8s/auth-deployment.yaml) -replace 'auth-service:.*', 'auth-service:${BUILD_NUMBER}' | Set-Content k8s/auth-deployment.yaml"
+                powershell -Command "(Get-Content k8s/student-deployment.yaml) -replace 'student-service:.*', 'student-service:${BUILD_NUMBER}' | Set-Content k8s/student-deployment.yaml"
+                powershell -Command "(Get-Content k8s/api-gateway-deployment.yaml) -replace 'api-gateway:.*', 'api-gateway:${BUILD_NUMBER}' | Set-Content k8s/api-gateway-deployment.yaml"
+                """
             }
         }
 
         stage('Deploy to Kubernetes') {
-            environment {
-                KUBECONFIG = "C:/Users/faizt/.kube/config"
-            }
             steps {
-                bat '''
+                bat """
                 kubectl apply -f k8s/
                 kubectl rollout status deployment/auth-deployment
                 kubectl rollout status deployment/student-deployment
-                '''
+                kubectl rollout status deployment/gateway-deployment
+                """
             }
         }
     }
 
     post {
         success {
-            echo '✅ Maven + Docker + Kubernetes deployment completed successfully!'
+            echo '✅ CI/CD pipeline completed successfully!'
         }
         failure {
-            echo '❌ Pipeline failed. Check logs.'
+            echo '❌ Pipeline failed. Check Jenkins logs.'
         }
     }
 }
